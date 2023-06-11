@@ -14,8 +14,8 @@ public sealed class ObjectDetector : System.IDisposable
     public void Dispose()
       => DeallocateObjects();
 
-    public void ProcessImage(Texture sourceTexture, float threshold)
-      => RunModel(sourceTexture, threshold);
+    public void ProcessImage(Texture sourceTexture, float confidenceThreshold, int isSoftNMS, float sigma, float scoreThreshold, float iouThreshold)
+      => RunModel(sourceTexture, confidenceThreshold, isSoftNMS, sigma, scoreThreshold, iouThreshold);
 
     public IEnumerable<Detection> Detections
       => _readCache.Cached;
@@ -114,12 +114,12 @@ public sealed class ObjectDetector : System.IDisposable
 
     #region Main inference function
 
-    void RunModel(Texture source, float threshold)
+    void RunModel(Texture sourceTexture, float confidenceThreshold, int isSoftNMS, float sigma, float scoreThreshold, float iouThreshold)
     {
         // Preprocessing
         var pre = _resources.preprocess;
         pre.SetInt("Size", _config.InputWidth);
-        pre.SetTexture(0, "Image", source);
+        pre.SetTexture(0, "Image", sourceTexture);
         pre.SetBuffer(0, "Tensor", _buffers.preprocess);
         pre.DispatchThreads(0, _config.InputWidth, _config.InputWidth, 1);
 
@@ -138,7 +138,7 @@ public sealed class ObjectDetector : System.IDisposable
         // First stage postprocessing: detection data aggregation
         var post1 = _resources.postprocess1;
         post1.SetInt("ClassCount", _config.ClassCount);
-        post1.SetFloat("Threshold", threshold);
+        post1.SetFloat("ConfidenceThreshold", confidenceThreshold);
         post1.SetBuffer(0, "Output", _buffers.post1);
         post1.SetBuffer(0, "OutputCount", _buffers.counter);
 
@@ -158,7 +158,10 @@ public sealed class ObjectDetector : System.IDisposable
 
         // Second stage postprocessing: overlap removal
         var post2 = _resources.postprocess2;
-        post2.SetFloat("Threshold", 0.5f);
+        post2.SetInt("isSoftNMS", isSoftNMS);
+        post2.SetFloat("Sigma", sigma);
+        post2.SetFloat("ScoreThreshold", scoreThreshold);
+        post2.SetFloat("IouThreshold", iouThreshold);
         post2.SetBuffer(0, "Input", _buffers.post1);
         post2.SetBuffer(0, "InputCount", _buffers.counter);
         post2.SetBuffer(0, "Output", _buffers.post2);

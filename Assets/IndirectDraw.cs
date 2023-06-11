@@ -6,7 +6,11 @@ using YoloV4Tiny;
 public sealed class IndirectDraw : MonoBehaviour
 {
     [SerializeField] ImageSource _source = null;
-    [SerializeField, Range(0, 1)] float _threshold = 0.5f;
+    [SerializeField, Range(0, 1)] float _confidenceThreshold = 0.5f;
+    [SerializeField, Range(0, 1)] int _isSoftNMS = 1;
+    [SerializeField, Range(0, 1)] float _sigma = 0.5f;
+    [SerializeField, Range(0, 1)] float _scoreThreshold = 0.5f;
+    [SerializeField, Range(0, 1)] float _iouThreshold = 0.5f;
     [SerializeField] ResourceSet _resources = null;
     [SerializeField] RawImage _preview = null;
     [SerializeField] Shader _shader = null;
@@ -34,7 +38,7 @@ public sealed class IndirectDraw : MonoBehaviour
 
     void LateUpdate()
     {
-        _detector.ProcessImage(_source.Texture, _threshold);
+        _detector.ProcessImage(_source.Texture, _confidenceThreshold, _isSoftNMS, _sigma, _scoreThreshold, _iouThreshold);
         _detector.SetIndirectDrawCount(_drawArgs);
         _material.SetBuffer("_Detections", _detector.DetectionBuffer);
         Graphics.DrawProceduralIndirect(_material, UnitBox, MeshTopology.Triangles, _drawArgs);

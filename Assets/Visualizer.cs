@@ -2,13 +2,16 @@ using UnityEngine;
 using UnityEngine.UI;
 using Klak.TestTools;
 using YoloV4Tiny;
-
 sealed class Visualizer : MonoBehaviour
 {
     #region Editable attributes
 
     [SerializeField] ImageSource _source = null;
-    [SerializeField, Range(0, 1)] float _threshold = 0.5f;
+    [SerializeField, Range(0, 1)] float _confidenceThreshold = 0.5f;
+    [SerializeField, Range(0, 1)] int _isSoftNMS = 1;
+    [SerializeField, Range(0, 1)] float _sigma = 0.5f;
+    [SerializeField, Range(0, 1)] float _scoreThreshold = 0.5f;
+    [SerializeField, Range(0, 1)] float _iouThreshold = 0.5f;
     [SerializeField] ResourceSet _resources = null;
     [SerializeField] RawImage _preview = null;
     [SerializeField] Marker _markerPrefab = null;
@@ -41,7 +44,7 @@ sealed class Visualizer : MonoBehaviour
 
     void Update()
     {
-        _detector.ProcessImage(_source.Texture, _threshold);
+        _detector.ProcessImage(_source.Texture, _confidenceThreshold, _isSoftNMS, _sigma, _scoreThreshold, _iouThreshold);
 
         var i = 0;
         foreach (var d in _detector.Detections)
